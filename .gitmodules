@@ -1,0 +1,6 @@
+[submodule "ext/tvision"]
+	path = ext/tvision
+	url = https://github.com/stash763/tvision.git
+[submodule "ext/libvterm"]
+	path = ext/libvterm
+	url = https://github.com/magiblot/libvterm.git
