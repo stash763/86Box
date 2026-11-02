@@ -78,6 +78,9 @@ static const struct {
 #ifdef USE_AUTOMATION
     { &char_automation_com_device },
 #endif
+#ifdef USE_TUI_UI
+    { &char_tui_com_device },
+#endif
 
     { 0 }
     // clang-format on

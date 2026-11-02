@@ -162,5 +162,8 @@ extern const device_t char_fujinet_com_device;
 #ifdef USE_AUTOMATION
 extern const device_t char_automation_com_device;
 #endif
+#ifdef USE_TUI_UI
+extern const device_t char_tui_com_device;
+#endif
 
 #endif /*EMU_CHAR_H*/

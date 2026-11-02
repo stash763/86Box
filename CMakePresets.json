@@ -63,6 +63,15 @@
             "inherits": "base"
         },
         {
+            "name": "tui",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "QT": false,
+                "TUI": true
+            },
+            "inherits": "base"
+        },
+        {
             "name": "llvm-macos-aarch64.cmake",
             "displayName": "MacOS clang regular",
             "generator": "Ninja",

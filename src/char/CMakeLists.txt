@@ -30,6 +30,10 @@ if(AUTOMATION)
     target_sources(char PRIVATE char_automation.c)
 endif()
 
+if(TUI)
+    target_sources(char PRIVATE char_tui.c)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     target_include_directories(char PRIVATE /usr/local/include)
 endif()

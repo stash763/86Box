@@ -20,6 +20,11 @@ if(NOT CMAKE_TOP_LEVEL_PROCESSED)
     message(FATAL_ERROR "Incorrect source directory specified. Delete your build directory and retry with the top-level directory instead")
 endif()
 
+if(TUI)
+    # Defined early so that every subdirectory (char, video, ...) inherits it.
+    add_compile_definitions(USE_TUI_UI)
+endif()
+
 if(APPLE)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
@@ -332,10 +337,16 @@ if (APPLE)
     add_subdirectory(mac)
 endif()
 
-add_subdirectory(osd)
+if (NOT TUI)
+    # The ImGui OSD is driven by the Qt and SDL frontends; the TUI has no
+    # use for it.
+    add_subdirectory(osd)
+endif()
 
 if (QT)
     add_subdirectory(qt)
+elseif (TUI)
+    add_subdirectory(tui)
 else()
     add_compile_definitions(USE_SDL_UI)
     add_subdirectory(unix)

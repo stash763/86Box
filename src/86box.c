@@ -98,6 +98,7 @@
 #include <86box/midi.h>
 #include <86box/video.h>
 #include <86box/ui.h>
+#include <86box/tui.h>
 #include <86box/path.h>
 #include <86box/plat.h>
 #include <86box/plat_dir.h>
@@ -859,6 +860,13 @@ pc_show_usage(void)
             "-Y or --donothing\t\t- do not show any UI or run the emulation\n"
 #endif
             "-Z or --lastvmpath\t\t- the last param. is VM path rather than config\n"
+#ifdef USE_TUI_UI
+            "\n"
+            "--tui-clean\t\t\t- TUI: hide the 86Box chrome (menus, status line), draw\n"
+            "\t\t\t\t  the guest screen over the whole terminal (Alt+F10 restores)\n"
+            "--tui-stdio\t\t\t- TUI: terminal I/O over stdin/stdout instead of /dev/tty,\n"
+            "\t\t\t\t  for PTY-driven harnesses (same as TVISION_USE_STDIO=1)\n"
+#endif
             "\n"
             "--window_x pos_x\t\t- Set window position in the horizontal direction\n"
             "--window_y pos_y\t\t- Set window position in the vertical direction\n"
@@ -1026,6 +1034,17 @@ usage:
 #endif
         } else if (!strcasecmp(argv[c], "--fullscreen") || !strcasecmp(argv[c], "-F")) {
             start_in_fullscreen = 1;
+#ifdef USE_TUI_UI
+        } else if (!strcasecmp(argv[c], "--tui-clean")) {
+            /* Hide the 86Box chrome: the guest screen is drawn over the
+               whole terminal, for harness-driven runs. Alt+F10 restores. */
+            tui_clean_mode = 1;
+        } else if (!strcasecmp(argv[c], "--tui-stdio")) {
+            /* Make Turbo Vision do terminal I/O over stdin/stdout instead
+               of /dev/tty, so PTY-based harnesses (tui-test, expect) can
+               drive the application. Same as TVISION_USE_STDIO=1. */
+            setenv("TVISION_USE_STDIO", "1", 0);
+#endif
         } else if (!strcasecmp(argv[c], "--logfile") || !strcasecmp(argv[c], "-L")) {
             if ((c + 1) == argc)
                 goto usage;

@@ -27,8 +27,10 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;UltraDebug;Optimized" CACHE STRING "")
 
-if(NOT DEFINED QT OR QT)
-    list(APPEND VCPKG_MANIFEST_FEATURES "qt-ui")
+if(NOT DEFINED TUI OR NOT TUI)
+    if(NOT DEFINED QT OR QT)
+        list(APPEND VCPKG_MANIFEST_FEATURES "qt-ui")
+    endif()
 endif()
 
 if(NOT DEFINED OPENAL OR OPENAL)
@@ -131,7 +133,16 @@ option(DEV_BRANCH   "Development branch"                                        
 option(DISCORD      "Discord Rich Presence support"                              ON)
 option(LIBASAN      "Enable compilation with the addresss sanitizer"             OFF)
 option(QT           "Use the Qt-based user interface"                            ON)
+option(TUI          "Use the Turbo Vision text-based user interface (no X11/Wayland/SDL)" OFF)
 option(SDL2         "Use SDL2 instead of SDL3"                                   OFF)
+
+if(TUI)
+    # The TUI frontend replaces both Qt and SDL.
+    set(QT OFF CACHE BOOL "Use the Qt-based user interface" FORCE)
+    if(NOT UNIX OR APPLE)
+        message(FATAL_ERROR "The TUI frontend is currently only supported on Linux")
+    endif()
+endif()
 option(BUILD_TESTING "Build the unit test suite"                                  OFF)
 option(BUILD_BENCHMARKS "Build performance benchmarks"                            OFF)
 
@@ -275,5 +286,13 @@ if(LIBASAN)
 endif()
 
 set(CMAKE_TOP_LEVEL_PROCESSED TRUE)
+
+if(TUI)
+    # Turbo Vision (text-based UI toolkit) and libvterm (VT/ANSI parser for
+    # the serial console), both built from submodules.
+    set(TV_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    add_subdirectory(ext/tvision EXCLUDE_FROM_ALL)
+    add_subdirectory(src/tui/vterm EXCLUDE_FROM_ALL)
+endif()
 
 add_subdirectory(src)

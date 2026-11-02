@@ -120,8 +120,15 @@ typedef struct plat_device_vol_locked_t plat_device_vol_locked_t;
 #    define strcasecmp _stricmp
 #else
 /* Declare these functions to avoid warnings. They will redirect to strcasecmp and strncasecmp respectively. */
+/* The TUI frontend's C++ sources define PLAT_NO_STRICMP_DECL before this
+   header when they also include Turbo Vision, which declares stricmp() and
+   strnicmp() itself (with C++ linkage and noexcept); the two declarations
+   cannot appear in the same translation unit. The C-linkage definitions
+   live in src/tui/tui_strings.c. */
+#    ifndef PLAT_NO_STRICMP_DECL
 extern int stricmp(const char *s1, const char *s2);
 extern int strnicmp(const char *s1, const char *s2, size_t n);
+#    endif
 #endif
 
 #if (defined(__HAIKU__) || defined(__unix__) || defined(__APPLE__)) && !defined(__linux__)

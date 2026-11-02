@@ -9,8 +9,6 @@
 #define uint128_t unsigned __int128
 #endif
 
-extern uint64_t tsc;
-
 /* Maximum period, currently 1 second. */
 #define MAX_USEC64    1000000ULL
 #define MAX_USEC      1000000.0
@@ -49,6 +47,8 @@ typedef struct pc_timer_t {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern uint64_t tsc;
 
 /*Timestamp of nearest enabled timer. CPU emulation must call timer_process()
   when TSC matches or exceeds this.*/
