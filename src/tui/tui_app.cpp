@@ -373,6 +373,19 @@ TUIApp::TUIApp() :
 {
     tui_app = this;
 
+    /* The desktop's background view would paint over the guest screen:
+       tvision draws a group's oldest subview last (TDeskTop inserts its
+       TBackground before anything else), and TBackground fills its whole
+       rectangle. The guest screen always covers the desktop completely,
+       so the background is removed instead of left to fight the guest
+       view for the same cells. */
+    if (deskTop->background != nullptr) {
+        deskTop->remove(deskTop->background);
+        /* Removed from the group, so ~TGroup will not free it. */
+        delete deskTop->background;
+        deskTop->background = nullptr;
+    }
+
     /* The guest screen covers the whole desktop and draws its own frame. */
     guestView = new TUIGuestScreen(deskTop->getExtent());
     guestView->growMode = 0; /* laid out manually */
@@ -407,8 +420,23 @@ TUIApp::applyLayout()
     if (!guestView)
         return;
 
-    TRect r = clean_mode ? TRect(0, 0, size.x, size.y) : deskTop->getExtent();
-    guestView->locate(r);
+    /* In clean mode the desktop itself is stretched over the menu bar and
+       status line rows: a view is clipped to its owner's rectangle, so a
+       fullscreen guest view inside the standard desktop could never paint
+       rows 0 and 24. Covering the chrome also makes clean mode immune to
+       tvision's exposure bookkeeping: TProgram::setScreenMode re-exposes
+       every subview (TGroup::setState(sfExposed) does not check
+       sfVisible), which would let hidden chrome draw again — whatever it
+       draws is simply painted over afterwards. */
+    if (clean_mode) {
+        TRect full(0, 0, size.x, size.y);
+        deskTop->locate(full);
+        guestView->locate(full);
+    } else {
+        TRect desk(0, 1, size.x, size.y - 1);
+        deskTop->locate(desk);
+        guestView->locate(desk);
+    }
 }
 
 void
@@ -552,6 +580,19 @@ tui_app_boot(void)
 {
     if (app_constructed)
         return 0;
+
+    /* pclog()/always_log() fall back to stdout when no --logfile was
+       given. On the GUI frontends that is harmless (a GUI app has no
+       visible stdout, and official release builds compile pclog() out
+       entirely), but in a TUI stdout *is* the display: interleaved log
+       lines corrupt it. From this point on the terminal belongs to
+       tvision, so route the lazy log open to /dev/null. Anything logged
+       before this point (usage text, the log header) has already gone
+       to the terminal, exactly like a Qt frontend launched from one.
+       An explicit --logfile still wins: pc_init() has already stored
+       it in log_path. */
+    if (log_path[0] == '\0')
+        strcpy(log_path, "/dev/null");
 
     tui_app = new TUIApp();
     if (!tui_app)

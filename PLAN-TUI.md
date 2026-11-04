@@ -31,11 +31,45 @@ harness.
 * Full settings dialogs (machine/CPU/video/memory pickers). Configure via
   `86box.cfg`, another frontend, or the automation socket.
 
-## Current status (updated 2026-11-02)
+## Current status (updated 2026-11-03)
 
-**Milestone reached: full interactive sessions verified against the real
-Test VM (MR BIOS → MS-DOS 6.22 from HDD), both launch styles, under a PTY
-harness.**
+**Milestone reached: the emulated machine is directly drivable by
+tui-test through the console passthrough (`--tui-clean` at 80×25): the
+guest screen *is* the terminal, `submit "ver"` executes in the guest and
+`MS-DOS Version 6.22` is asserted from terminal cells.**
+
+* tui-test validation (the point of the passthrough): clean 80×25 spawn,
+  boot to `C:\>`, `submit "ver"` → `expect "MS-DOS Version 6.22"` PASS,
+  `submit "dir"` → `expect "COMMAND"` PASS, Alt+F10 chrome toggle PASS,
+  F10 → Machine → Exit → confirm → clean exit (code 0, terminal
+  restored). Screenshot evidence under `/tmp/opencode/vm-passthrough-*.png`.
+* Clean-mode chrome fix (two tvision behaviors we must design around):
+  1. tvision draws a group's **oldest subview last** — the desktop's
+     `TBackground` painted over the guest view on every full group
+     redraw. The background is now removed at construction (the guest
+     screen always covers the desktop anyway).
+  2. Views are clipped to their owner's rectangle, so a fullscreen guest
+     view inside the standard desktop could never paint rows 0/24 — and
+     `TProgram::setScreenMode` re-exposes *hidden* views
+     (`TGroup::setState(sfExposed)` ignores `sfVisible`), letting hidden
+     chrome draw again. In clean mode the desktop itself is now
+     stretched over the whole terminal, so the guest paints over
+     whatever the chrome draws — robust against the exposure quirk.
+* Burst-typing fix: when several bytes arrive in one read, tvision
+  reports the keys with `keyCode == 0` and the character only in
+  `text[]` — `tui_key_translate()` fell back to nothing and whole
+  bursts (a test harness typing a line at once) were silently dropped.
+  It now falls back to `scan_from_char()` from `getText()`.
+* Usage/log regression fix: the `/dev/null` `log_path` pre-seed moved
+  from `main()` to `tui_app_boot()` — `pc_show_usage()` prints through
+  `always_log()`, which the old pre-seed silenced (usage never appeared).
+  Usage text and the log header now reach the terminal before tvision
+  takes over (like a Qt frontend launched from a terminal); everything
+  after boot is still silenced without `-L`.
+
+Previous milestone (2026-11-02): full interactive sessions verified
+against the real Test VM (MR BIOS → MS-DOS 6.22 from HDD), both launch
+styles, under a PTY harness.
 
 * Rendering fix: the guest screen and serial views were drawn through
   `TDrawBuffer::moveBuf()` with a `TScreenCell` array — but `moveBuf()`

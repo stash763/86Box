@@ -37,6 +37,8 @@
 #define Uses_TStaticText
 #define Uses_TButton
 #include <tvision/tv.h>
+#define Uses_TBackground /* tv.h only forward-declares it */
+#include <tvision/app.h>
 
 #include "tui_screen.hpp"
 

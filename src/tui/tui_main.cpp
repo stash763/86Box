@@ -297,26 +297,6 @@ main(int argc, char **argv)
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    /* pclog() falls back to stdout when no --logfile was given. On the
-       GUI frontends that is harmless: a GUI app has no visible stdout,
-       and the official release builds compile pclog() out entirely. In
-       a TUI, stdout *is* the display, and interleaved log lines corrupt
-       it (they show up as garbage text and, e.g., "Illegal instruction"
-       messages from the CPU core's logging). Pre-seed log_path so the
-       lazy log open in pclog()/always_log()/fatal() lands on /dev/null
-       instead of stdout, matching the silent behavior of mainline's GUI
-       frontends. An explicit --logfile still wins, and this works in
-       both terminal modes (tvision's /dev/tty and TVISION_USE_STDIO). */
-    int have_log = 0;
-    for (int i = 1; i < argc; i++) {
-        if (!strcasecmp(argv[i], "-L") || !strcasecmp(argv[i], "--logfile")) {
-            have_log = 1;
-            break;
-        }
-    }
-    if (!have_log)
-        strcpy(log_path, "/dev/null");
-
     ret = pc_init(argc, argv);
     if (ret == 0)
         return 0;

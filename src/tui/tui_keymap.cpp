@@ -174,15 +174,26 @@ tui_key_translate(const KeyDownEvent &key, TuiKeySequence &out)
 
     /* The key itself. */
     bool sent_key = false;
+    uint16_t scan = 0;
     if (key.keyCode != 0 && key.keyCode != kbNoKey) {
-        uint16_t scan = xlate_scan(key.keyCode);
+        scan = xlate_scan(key.keyCode);
         if (scan == 0)
             scan = scan_from_char(key.keyCode, key.controlKeyState);
-        if (scan) {
-            push_make(out, scan);
-            push_break(out, scan); /* synthesized release */
-            sent_key = true;
-        }
+    }
+    if (scan == 0) {
+        /* Some input paths report a key with keyCode == 0 and the
+           character only in text[]: notably, when several bytes arrive
+           in a single read the parser produces "text" key events rather
+           than charCode/scanCode ones. Fall back to the text so bursts
+           (a test harness typing a whole line at once) are not lost. */
+        TStringView text = key.getText();
+        if (text.size() == 1)
+            scan = scan_from_char((uint8_t) text[0], key.controlKeyState);
+    }
+    if (scan) {
+        push_make(out, scan);
+        push_break(out, scan); /* synthesized release */
+        sent_key = true;
     }
 
     /* Modifier breaks after the key. */

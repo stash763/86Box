@@ -67,13 +67,15 @@ the VMs path.
 
 ### Logging
 
-Without `-L`, the emulator log (`pclog`) is **discarded** in the TUI. This
-matches the other frontends in spirit: a GUI app's stdout is invisible, and
-the official release builds compile `pclog()` out entirely — but in a TUI
-stdout *is* the display, so letting log lines through would corrupt it
-(they would appear as garbage text over the guest screen). Pass
-`-L <file>` to get the usual 86Box log file, exactly like the Qt/SDL
-frontends.
+Without `-L`, the emulator log (`pclog`) is **discarded** once the TUI
+owns the terminal. This matches the other frontends in spirit: a GUI
+app's stdout is invisible, and the official release builds compile
+`pclog()` out entirely — but in a TUI stdout *is* the display, so letting
+log lines through would corrupt it (they would appear as garbage text
+over the guest screen). Anything printed *before* the TUI starts — usage
+text (`--help`, bad arguments) and the log header — goes to the terminal,
+exactly like a Qt frontend launched from one. Pass `-L <file>` to get the
+usual 86Box log file, exactly like the Qt/SDL frontends.
 
 ### Files and paths
 
@@ -131,6 +133,28 @@ The TUI is designed to be driven headlessly: spawn it under a PTY with
 if desired. Guest output, menus, and dialogs all render as ordinary
 terminal cell updates; input is plain terminal key sequences (F10 = `ESC
 [21~` on xterm). This is how the automated acceptance tests run.
+
+### Driving the *emulated machine* with tui-test
+
+`--tui-clean` turns the TUI into a pure console passthrough: no 86Box
+chrome, the guest text screen *is* the terminal. Spawned at exactly the
+guest's text-mode size (80×25), every terminal cell maps 1:1 to a guest
+cell, and every key goes to the emulated machine — so a terminal-state
+harness works **directly with the VM**, as if the VM were the TUI app:
+
+```sh
+tui-test --session vm run --cols 80 --rows 25 \
+  86Box --tui-clean --tui-stdio -R /path/to/roms "path/to/86box.cfg"
+tui-test --session vm expect text "C:\\>" --timeout 60000   # wait for DOS
+tui-test --session vm submit "ver"
+tui-test --session vm expect text "MS-DOS Version 6.22"     # guest response
+tui-test --session vm screenshot -o boot.svg
+tui-test --session vm close
+```
+
+Alt+F10 brings the 86Box chrome back (menus, status line) for
+machine-level control (pause, reset, media, exit), and F10/menu
+navigation works from there under the same harness.
 
 ## Limitations
 
